@@ -1,57 +1,49 @@
 // hooks/useAccounts.ts
-import { Account } from "@/types/account";
 import { useState, useEffect } from "react";
+import { Account } from "@/types/account";
 
-type AccountsParams = {
+interface AccountsParams {
   page_id: number;
   page_size: number;
-};
+}
 
-export const useAccounts = (initialParams: AccountsParams) => {
+export function useAccounts({ page_id, page_size }: AccountsParams) {
   const [data, setData] = useState<Account[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [params, setParams] = useState<AccountsParams>(initialParams);
+  const [currentPage, setPage] = useState(page_id);
 
   useEffect(() => {
     const fetchAccounts = async () => {
+      setLoading(true);
       try {
-        setLoading(true);
-
-        // Using Next.js API route instead of direct backend call
+        const token = localStorage.getItem("auth_token");
         const response = await fetch(
-          `/api/accounts?page_id=${params.page_id}&page_size=${params.page_size}`
+          `${process.env.NEXT_PUBLIC_API_URL}/accounts?page_id=${currentPage}&page_size=${page_size}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
         );
 
         if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+          throw new Error("Failed to fetch accounts");
         }
 
-        const result = await response.json();
-        setData(Array.isArray(result) ? result : []);
-        setError(null);
+        const accountsData = await response.json();
+        setData(accountsData);
       } catch (err) {
-        console.error("Fetch error:", err);
-        setError(err instanceof Error ? err.message : "An error occurred");
-        setData([]);
+        setError(
+          err instanceof Error ? err.message : "Failed to fetch accounts"
+        );
       } finally {
         setLoading(false);
       }
     };
 
     fetchAccounts();
-  }, [params]);
+  }, [currentPage, page_size]);
 
-  const setPage = (newPage: number) => {
-    setParams((prev) => ({ ...prev, page_id: newPage }));
-  };
-
-  return {
-    data,
-    loading,
-    error,
-    currentPage: params.page_id,
-    pageSize: params.page_size,
-    setPage,
-  };
-};
+  return { data, loading, error, currentPage, setPage };
+}

@@ -1,3 +1,4 @@
+import { CardTransaction } from "@/components/card-transaction";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -31,6 +32,9 @@ export default function ManageUser() {
           </Breadcrumb>
         </div>
       </header>
+      <div className="container gap-4 px-4">
+        <CardTransaction />
+      </div>
     </>
   );
 }

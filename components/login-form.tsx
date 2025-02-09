@@ -7,24 +7,24 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+// import { useRouter } from "next/navigation";
 
-interface LoginResponse {
-  access_token: string;
-  user: {
-    username: string;
-    fullname: string;
-    email: string;
-    password_changed_at: string;
-    created_at: string;
-  };
-}
+// interface LoginResponse {
+//   access_token: string;
+//   user: {
+//     username: string;
+//     fullname: string;
+//     email: string;
+//     password_changed_at: string;
+//     created_at: string;
+//   };
+// }
 
 export function LoginForm({
   className,
   ...props
 }: React.ComponentProps<"div">) {
-  const router = useRouter();
+  // const router = useRouter();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -36,29 +36,32 @@ export function LoginForm({
     setIsLoading(true);
 
     try {
-      const response = await fetch("http://your-backend-url/users/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          username,
-          password,
-        }),
-      });
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/users/login`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            username,
+            password,
+          }),
+        }
+      );
+
+      const data = await response.json();
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to login");
+        throw new Error(data.error || "Failed to login");
       }
 
-      const data: LoginResponse = await response.json();
-
-      // Store the token
+      // Store token in both cookie and localStorage
+      document.cookie = `auth_token=${data.access_token}; path=/`;
       localStorage.setItem("auth_token", data.access_token);
 
-      // Redirect to dashboard
-      router.push("/dashboard");
+      // Force navigation
+      window.location.href = "/dashboard";
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
     } finally {
